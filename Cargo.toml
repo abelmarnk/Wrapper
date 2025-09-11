@@ -1,0 +1,6 @@
+[workspace]
+members = [ 
+    "client",
+    "program"
+, "wrapper-test"
+]

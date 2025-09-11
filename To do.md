@@ -1,0 +1,9 @@
+- Do signing accounts in a CPI have to be passed in the order of their signatures(or their signatures passed in that order)?
+- Add event emitting when commits are created
+- Deduplicate logic where possible
+- Standardize schema for the client
+- Add detailed errors to the client
+- Change the structure of the CreateCommit and Base struct to ensure it is never left in an inconsistent state
+- Add more tests(e.g other token program operations, swaps, e.t.c)
+- Update the Doc.md
+- Update the Readme.md

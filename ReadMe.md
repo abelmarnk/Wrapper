@@ -1,0 +1,7 @@
+#Wrapper
+
+This program was written as a demonstration of a possible solutions to rouge packages, rouge bots and other instrusions with the intention of stealing keys or sending unapproved transactions, the idea is that the user would describe details about the kind of transactions they frequently have, like the accounts and the data and of course the program and then they would have some of their funds(which they can withdraw at any time) stored in a particular account controlled by this program and the program would have a starter key that is allowed to initiate transactions of the described type, rather than using their keys for every transaction they make, they would just use the starter key and if at all the key is compromised they can only send out transactions forms that have been approved, in the context of bots and other similar tools the recipeint of the transactions would be accounts they still control so there would be harm done, this was written with that context in mind.
+
+Because of the additional CU usage the program would be best used for transactions with high priority, the program is still being optimized and reviewed, though the current tests give expected results.
+
+Transactions forms that can be commited to could have different ranges of vaildity e.g a one time use, many times, a duration e.t.c
