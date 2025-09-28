@@ -1,4 +1,6 @@
-ts-client
+ts-client/
+client/
+wrapper-test/
 target
 Cargo.lock
 Layout.txt

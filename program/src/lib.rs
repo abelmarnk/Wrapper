@@ -27,7 +27,6 @@ pub enum InstructionTag{
     Entry,
     CreateCommit,
     ChangeCommit,
-    CreatePda,
     WithdrawNative,
     WithdrawToken,
     CloseCommit
@@ -39,7 +38,6 @@ impl TryFrom<u8> for InstructionTag{
             0 => Ok(InstructionTag::Entry),
             1 => Ok(InstructionTag::CreateCommit),
             2 => Ok(InstructionTag::ChangeCommit),
-            3 => Ok(InstructionTag::CreatePda),
             4 => Ok(InstructionTag::WithdrawNative),
             5 => Ok(InstructionTag::WithdrawToken),
             6 => Ok(InstructionTag::CloseCommit),
@@ -55,7 +53,6 @@ fn process_instruction(
     accounts: &[AccountInfo],
     instruction_data: &[u8],
 ) -> ProgramResult {
-
 
     let (tag, data) = instruction_data.split_last().
         ok_or_else(|| ProgramError::InvalidInstructionData)?;
@@ -81,10 +78,6 @@ fn process_instruction(
             let mut change_commit = ChangeCommit::try_from((accounts, data))?;
 
             change_commit.process()
-        },
-        InstructionTag::CreatePda=>{
-            // This instruction is not necessary since accounts only hold SOL, though that might change in the future.
-            Ok(())
         },
         InstructionTag::WithdrawNative=>{
             let withdraw_native = WithdrawNative::try_from((accounts, data))?;

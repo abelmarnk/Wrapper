@@ -11,7 +11,7 @@ use pinocchio::{
 };
 
 use crate::{
-    CustomError
+    WrapperError
 };
 
 pub const COMMIT_CONDITION_DATA_SIZE:usize = 20;
@@ -39,11 +39,11 @@ impl TryFrom<u8> for CommitConditionTag {
             5 => Ok(CommitConditionTag::CountAfterTimestamp),
             6 => Ok(CommitConditionTag::OneOffCountBetweenTimestamp),
             7 => Ok(CommitConditionTag::RepeatCountBetweenTimestamp),
-            _ => Err(CustomError::InvalidCommitConditionTag),
+            _ => Err(WrapperError::InvalidCommitConditionTag),
         }
     }
 
-    type Error = CustomError;
+    type Error = WrapperError;
 }
 
 impl Into<u8> for CommitConditionTag{
@@ -64,6 +64,7 @@ impl CommitConditionTag {
     
 }
 
+/// Stores information about the time form of the commitment made
 #[repr(C, packed)]
 #[derive(Debug, Clone, Copy, Pod, Zeroable)]
 pub struct CommitCondition {
@@ -72,31 +73,30 @@ pub struct CommitCondition {
 }
 
 impl CommitCondition{
-    // Unsafe helpers
-
-}
-
-impl CommitCondition{
     pub const LEN:usize = core::mem::size_of::<CommitCondition>();
 }
 
 impl CommitCondition{
+
+    /// Checks if the tag is valid, if so it returns it
     #[inline(always)]
-    pub fn is_valid(&self)->bool{
-        CommitConditionTag::try_from(self.tag).is_ok()
+    pub fn is_valid(&self)->Result<CommitConditionTag, WrapperError>{
+        CommitConditionTag::try_from(self.tag)
     }
 
+    /// Updates the count, returns an error if the count is exhausted
     #[inline(always)]
     fn update_count(count: &mut u32)->Result<(), ProgramError>{
-        if *count > 0{
+        if (*count).gt(&0){
             *count = count.saturating_sub(1);
             return Ok(());
         }
     
-        Err(CustomError::CountExhausted.into())
+        Err(WrapperError::CountExhausted.into())
     }
 
-    #[inline(always)]
+    /// Get all the data fields of the commit
+    #[inline]
     fn get_data_fields(&mut self) -> Result<(u32, i64, u32, u32), ProgramError> {
         let (count_bytes, rest) = self.data.split_at_mut(4);
 
@@ -129,32 +129,24 @@ impl CommitCondition{
         Ok((count, timestamp, offset, repeat_count))
     }
 
-    #[inline(always)]
+    /// Set all the changing data fields of the commit
+    #[inline]
     fn set_data_fields(
         &mut self,
         count: u32,
         timestamp: i64,
-        offset: u32,
-        repeat_count: u32,
     ) -> Result<(), ProgramError> {
-        let (count_bytes, rest) = self.data.split_at_mut(4);
+        let (count_bytes, rest) = self.data.
+            split_at_mut(core::mem::size_of::<u32>());
         count_bytes.copy_from_slice(&count.to_le_bytes());
 
         msg!("-7.1");
 
-        let (timestamp_bytes, rest) = rest.split_at_mut(8);
+        let (timestamp_bytes, _) = rest.
+        split_at_mut(core::mem::size_of::<i64>());
         timestamp_bytes.copy_from_slice(&timestamp.to_le_bytes());
 
         msg!("-7.2");
-
-        let (offset_bytes, repeat_count_bytes) = rest.split_at_mut(4);
-        offset_bytes.copy_from_slice(&offset.to_le_bytes());
-
-        msg!("-7.3");
-
-        repeat_count_bytes.copy_from_slice(&repeat_count.to_le_bytes());
-
-        msg!("-7.4");
 
         Ok(())
     }
@@ -172,29 +164,29 @@ impl CommitCondition{
                 Self::update_count(&mut count)
             },
             CommitConditionTag::BeforeTimestamp=>{
-                if !(current_timestamp.gt(&timestamp)){
-                    return Err(CustomError::TooLate.into());
+                if current_timestamp.ge(&timestamp){
+                    return Err(WrapperError::TooLate.into());
                 }
 
                 Ok(())
             },
             CommitConditionTag::AfterTimestamp=>{
-                if !(current_timestamp.lt(&timestamp)){
-                    return Err(CustomError::TooEarly.into());
+                if current_timestamp.le(&timestamp){
+                    return Err(WrapperError::TooEarly.into());
                 }
 
                 Ok(())
             },
             CommitConditionTag::CountBeforeTimestamp=>{
-                if !(current_timestamp.gt(&mut timestamp)){
-                    return Err(CustomError::TooLate.into());
+                if current_timestamp.ge(&mut timestamp){
+                    return Err(WrapperError::TooLate.into());
                 }
 
                 Self::update_count(&mut count)
             },
             CommitConditionTag::CountAfterTimestamp=>{
-                if !(current_timestamp.lt(&timestamp)){
-                    return Err(CustomError::TooEarly.into());       
+                if current_timestamp.le(&timestamp){
+                    return Err(WrapperError::TooEarly.into());       
                 }
 
                 Self::update_count(&mut count)
@@ -205,10 +197,10 @@ impl CommitCondition{
                     ok_or_else(||ProgramError::ArithmeticOverflow)?;
 
                 if current_timestamp.lt(&start){
-                    return Err(CustomError::TooEarly.into());
+                    return Err(WrapperError::TooEarly.into());
                 }
                 else if current_timestamp.gt(&end) {
-                    return Err(CustomError::TooLate.into());   
+                    return Err(WrapperError::TooLate.into());   
                 }
 
                 Self::update_count(&mut count)
@@ -218,7 +210,7 @@ impl CommitCondition{
                     ok_or_else(||ProgramError::ArithmeticOverflow)?;
 
                 if current_timestamp.lt(&timestamp){
-                    return Err(CustomError::TooEarly.into());
+                    return Err(WrapperError::TooEarly.into());
                 }
                 else if current_timestamp.gt(&end) {
                     timestamp = current_timestamp;
@@ -228,11 +220,11 @@ impl CommitCondition{
                 Self::update_count(&mut count)
             },
             CommitConditionTag::Default=>{
-                Err(CustomError::ConditionNotSet.into())
+                Err(WrapperError::ConditionNotSet.into())
             }
         }?;
 
-        self.set_data_fields(count, timestamp, offset, repeat_count)
+        self.set_data_fields(count, timestamp)
 
     }
 }

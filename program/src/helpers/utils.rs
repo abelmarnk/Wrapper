@@ -6,7 +6,7 @@ use pinocchio::{
     account_info::AccountInfo, memory::sol_memcmp, msg, program_error::ProgramError, pubkey::{self, Pubkey}, syscalls, ProgramResult
 };
 
-use crate::CustomError;
+use crate::WrapperError;
 
 // To be called after the accounts bound has been checked.
 pub fn extract_program_signers<'a,'b>(accounts:&'a[AccountInfo], signers_count: u8, accounts_count: u8) -> &'a[AccountInfo]{
@@ -44,10 +44,10 @@ pub fn verify_signers(
 
         let expected_program_signer =
             pubkey::create_program_address(&[signer.key().as_ref(), &[*bump]], &crate::ID)
-                .map_err(|_| CustomError::InvalidSignerSeeds)?;
+                .map_err(|_| WrapperError::InvalidSignerSeeds)?;
 
         if !are_keys_equal(&expected_program_signer, program_signer.key()) {
-            return Err(ProgramError::from(CustomError::InvalidSignerSeeds));
+            return Err(ProgramError::from(WrapperError::InvalidSignerSeeds));
         }
     }
     Ok(())

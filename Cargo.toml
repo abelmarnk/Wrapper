@@ -1,6 +1,6 @@
 [workspace]
 members = [ 
     "client",
-    "program"
-, "wrapper-test"
+    "program",
+    "wrapper-test"
 ]

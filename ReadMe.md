@@ -1,7 +1,51 @@
-#Wrapper
+# Wrapper
 
-This program was written as a demonstration of a possible solutions to rouge packages, rouge bots and other instrusions with the intention of stealing keys or sending unapproved transactions, the idea is that the user would describe details about the kind of transactions they frequently have, like the accounts and the data and of course the program and then they would have some of their funds(which they can withdraw at any time) stored in a particular account controlled by this program and the program would have a starter key that is allowed to initiate transactions of the described type, rather than using their keys for every transaction they make, they would just use the starter key and if at all the key is compromised they can only send out transactions forms that have been approved, in the context of bots and other similar tools the recipeint of the transactions would be accounts they still control so there would be harm done, this was written with that context in mind.
+---
 
-Because of the additional CU usage the program would be best used for transactions with high priority, the program is still being optimized and reviewed, though the current tests give expected results.
+## Description
 
-Transactions forms that can be commited to could have different ranges of vaildity e.g a one time use, many times, a duration e.t.c
+This program was written as a **demonstration of a possible solution to rogue packages, rogue bots, and other intrusions** that aim to steal keys or send unauthorized transactions.
+
+### How It Works
+
+1. **User Configuration**  
+   The user describes details about the kinds of transactions they frequently make — including:
+   - Accounts involved  
+   - Typical data and parameters  
+   - The program or context for these transactions  
+
+2. **Starter Key & Controlled Account**  
+   The user deposits some funds into an **account controlled by this program**.  
+   - The program is given a **starter key**, which is only allowed to initiate transactions that match the user’s described patterns.  
+   - Users can **withdraw funds at any time**.
+
+3. **Transaction Execution**  
+   Instead of using their primary keys for every transaction:
+   - The user uses the **starter key**.  
+   - If the key is ever compromised, attackers can **only send pre-approved transaction forms**.  
+   - In contexts like automated bots or tools, the recipients of those transactions would still be **accounts controlled by the user**, so no real harm is done.
+
+> This design reduces risk by reducing direct exposure of primary keys.
+
+---
+
+## Performance Notes
+
+Due to the **additional compute unit (CU)** usage, this program is best suited for **high-priority transactions**, the program is still being **optimized and reviewed**.
+
+---
+
+## Transaction Form Validity
+
+Transaction forms that can be committed may have different validity rules, such as:
+
+- **One-time use**
+- **Multiple uses**
+- **Time-bound validity** (e.g., valid for a specific duration)
+
+---
+
+## Summary
+
+This wrapper provides a safer interface for executing frequent or automated transactions by **abstracting away direct key usage** and allowing only controlled, pre-approved transaction forms to be sent.
+

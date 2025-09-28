@@ -4,19 +4,27 @@ use pinocchio::{
 };
 
 use pinocchio_system::instructions::Transfer;
+
+/// Stores the state for the withdraw native instruction
 pub struct WithdrawNative<'a> {
     pub signer: &'a AccountInfo,
     pub program_signer: &'a AccountInfo,
     pub amount: u64,
-    pub bump: u8,
+    pub bump: [u8;1],
 }
 
 impl<'a> TryFrom<(&'a [AccountInfo], &'a [u8])> for WithdrawNative<'a> {
     type Error = ProgramError;
-    #[inline(always)]
+    /// Extract the accounts and check the signer account signed
+    /// 
+    /// Signer account:- This is the account that owns the funds in the corresponding program account
+    /// 
+    /// Program signer account:- This is the account that stores the funds
+    /// 
     fn try_from(value: (&'a [AccountInfo], &'a [u8])) -> Result<Self, Self::Error> {
         // Destructure accounts
-        let [signer, program_signer] = value.0 else {
+        // Signer account-- Program signer account
+        let [signer, program_signer, _] = value.0 else {
             return Err(ProgramError::NotEnoughAccountKeys);
         };
 
@@ -28,9 +36,9 @@ impl<'a> TryFrom<(&'a [AccountInfo], &'a [u8])> for WithdrawNative<'a> {
             return Err(ProgramError::InvalidInstructionData);
         }
 
-        // Decode fields
-        let amount = u64::from_le_bytes(
-            data[..core::mem::size_of::<u64>()].try_into().unwrap());
+        // Extract data
+        let amount = u64::from_le_bytes(data[..core::mem::size_of::<u64>()].try_into().unwrap());
+
         let bump = *data.last().unwrap();
 
         // Signer must sign
@@ -44,7 +52,7 @@ impl<'a> TryFrom<(&'a [AccountInfo], &'a [u8])> for WithdrawNative<'a> {
                 &crate::ID)
                 .map_err(|_| ProgramError::InvalidSeeds)?;
 
-        if !program_signer.key().eq(&expected_program_signer) {
+        if program_signer.key().ne(&expected_program_signer) {
             return Err(ProgramError::InvalidSeeds);
         }
 
@@ -52,17 +60,17 @@ impl<'a> TryFrom<(&'a [AccountInfo], &'a [u8])> for WithdrawNative<'a> {
             signer,
             program_signer,
             amount,
-            bump:bump,
+            bump:[bump],
         })
     }
 }
 
 impl<'a> WithdrawNative<'a> {
-    #[inline(always)]
+    /// Tranfer the amount back to the owner
     pub fn process(&self) -> ProgramResult {
         // Seeds for PDA signer
-        let seeds: [&[u8]; 2] = [self.signer.key().as_ref(), &[self.bump]];
-        let seeds: [Seed; 2] = seeds.map(Seed::from);
+        let seeds: [Seed; 2] = [Seed::from(self.signer.key().as_ref()), 
+            Seed::from(&self.bump)];
         let signer = Signer::from(seeds.as_ref());
 
         // Perform transfer

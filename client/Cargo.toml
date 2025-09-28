@@ -1,9 +1,0 @@
-[package]
-name = "client"
-version = "0.1.0"
-edition = "2021"
-
-[dependencies]
-borsh = "1.5.7"
-bytemuck = "1.23.2"
-solana-sdk = "2.3.1"

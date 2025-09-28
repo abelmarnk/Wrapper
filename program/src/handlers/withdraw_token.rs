@@ -4,8 +4,7 @@ use pinocchio::{
 };
 use pinocchio_token::instructions::TransferChecked;
 
-
-
+/// Stores the state for the withdraw token instruction
 pub struct WithdrawToken<'a> {
     pub signer: &'a AccountInfo,
     pub program_signer: &'a AccountInfo,
@@ -14,14 +13,26 @@ pub struct WithdrawToken<'a> {
     pub signer_ata: &'a AccountInfo,
     pub amount: u64,
     pub decimals: u8,
-    pub bump: u8,
+    pub bump: [u8; 1],
 }
 
 impl<'a> TryFrom<(&'a [AccountInfo], &'a [u8])> for WithdrawToken<'a> {
     type Error = ProgramError;
-
+    /// Extract the accounts and instruction data for token withdrawal
+    /// 
+    /// Signer account:- This is the account that owns the tokens in the corresponding program account
+    /// 
+    /// Program signer account:- This is the PDA account that stores the tokens
+    /// 
+    /// Mint account:- The token mint account for the SPL token being withdrawn
+    /// 
+    /// Program signer ATA:- The associated token account owned by the program signer PDA
+    /// 
+    /// Signer ATA:- The associated token account owned by the signer to receive tokens
+    /// 
     fn try_from(value: (&'a [AccountInfo], &'a [u8])) -> Result<Self, Self::Error> {
-        // Destructure accounts: signer, program_signer, mint, program_signer_ata, signer_ata
+        // Destructure accounts
+        // Signer account -- Program signer account -- Mint account -- Program signer ATA -- Signer ATA
         let [signer, program_signer, mint, program_signer_ata, signer_ata] = value.0 else {
             return Err(ProgramError::NotEnoughAccountKeys);
         };
@@ -36,9 +47,8 @@ impl<'a> TryFrom<(&'a [AccountInfo], &'a [u8])> for WithdrawToken<'a> {
             return Err(ProgramError::InvalidInstructionData);
         }
 
-        // Decode fields
-        let amount_bytes: [u8; 8] = data[0..8].try_into().unwrap();
-        let amount = u64::from_le_bytes(amount_bytes);
+        // Extract data
+        let amount = u64::from_le_bytes(data[..core::mem::size_of::<u64>()].try_into().unwrap());
         let decimals = data[8];
         let bump = data[9];
 
@@ -49,11 +59,11 @@ impl<'a> TryFrom<(&'a [AccountInfo], &'a [u8])> for WithdrawToken<'a> {
 
         // Verify PDA derivation
         let expected_program_signer =
-            pubkey::create_program_address(
-                &[signer.key().as_ref(), &[bump]], &crate::ID)
+            pubkey::create_program_address(&[signer.key().as_ref(), &[bump]], 
+                &crate::ID)
                 .map_err(|_| ProgramError::InvalidSeeds)?;
 
-        if !program_signer.key().eq(&expected_program_signer) {
+        if program_signer.key().ne(&expected_program_signer) {
             return Err(ProgramError::InvalidSeeds);
         }
 
@@ -65,18 +75,18 @@ impl<'a> TryFrom<(&'a [AccountInfo], &'a [u8])> for WithdrawToken<'a> {
             signer_ata,
             amount,
             decimals,
-            bump,
+            bump: [bump],
         })
     }
 }
 
 impl<'a> WithdrawToken<'a> {
-    #[inline(always)]
+    /// Transfer the tokens back to the owner with decimal validation
     pub fn process(&self) -> ProgramResult {
         // Seeds for PDA signer
-        let seeds: [&[u8]; 2] = [self.signer.key().as_ref(), &[self.bump]];
-        let pin_seeds: [Seed; 2] = seeds.map(Seed::from);
-        let signer_meta = Signer::from(pin_seeds.as_ref());
+        let seeds: [Seed; 2] = [Seed::from(self.signer.key().as_ref()), 
+            Seed::from(&self.bump)];
+        let signer = Signer::from(seeds.as_ref());
 
         // Perform SPL Token transfer with decimals check
         TransferChecked {
@@ -87,6 +97,6 @@ impl<'a> WithdrawToken<'a> {
             amount: self.amount,
             decimals: self.decimals,
         }
-        .invoke_signed(&[signer_meta])
+        .invoke_signed(&[signer])
     }
 }

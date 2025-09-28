@@ -1,7 +1,7 @@
 use pinocchio::program_error::ProgramError;
 
 #[derive(Debug, Copy, Clone)]
-pub enum CustomError {
+pub enum WrapperError {
     OutOfTimeRange,
 
     ConditionNotSet,
@@ -28,11 +28,13 @@ pub enum CustomError {
 
     InvalidCommitConditionTag,
 
-    InvalidAccountKeysCount
+    InvalidAccountKeysCount,
+
+    InvalidDataCommitType
 }
 
-impl From<CustomError> for ProgramError {
-    fn from(error:CustomError)->ProgramError{
+impl From<WrapperError> for ProgramError {
+    fn from(error:WrapperError)->ProgramError{
         return ProgramError::Custom(error as u32);
     }
 }
