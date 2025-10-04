@@ -31,7 +31,7 @@ This program was written as a **demonstration of a possible solution to rogue pa
 
 ## Performance Notes
 
-Due to the **additional compute unit (CU)** usage, this program is best suited for **high-priority transactions**, the program is still being **optimized and reviewed**.
+Due to the **additional compute unit (CU)** usage though little, this program is best suited for **high-priority transactions**, the program is still being **optimized and reviewed**.
 
 ---
 
