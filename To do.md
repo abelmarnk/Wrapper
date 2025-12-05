@@ -1,4 +1,0 @@
-- Add code for the client
-- Add tests for the program
-- Update the Doc.md
-- Update the Readme.md
